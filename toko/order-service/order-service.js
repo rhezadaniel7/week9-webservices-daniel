@@ -3,6 +3,78 @@ const amqp = require('amqplib');
 const app = express();
 app.use(express.json());
 
+// ===== Lab 11: dokumentasi OpenAPI (code-first) =====
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
+const spec = swaggerJsdoc({
+  definition: {
+    openapi: '3.0.3',
+    info: { title: 'Order Service', version: '1.0.0', description: 'Pembuatan dan daftar pesanan' },
+    servers: [{ url: 'http://localhost:3001' }],
+  },
+  apis: [__filename],
+});
+app.get('/openapi.json', (req, res) => res.json(spec));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(spec));
+
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     OrderRequest:
+ *       type: object
+ *       required: [productId, qty]
+ *       properties:
+ *         productId: { type: integer, example: 1 }
+ *         qty: { type: integer, minimum: 1, example: 2 }
+ *     Order:
+ *       type: object
+ *       properties:
+ *         id: { type: integer, example: 1 }
+ *         productId: { type: integer, example: 1 }
+ *         productName: { type: string, example: Keyboard Mekanik }
+ *         qty: { type: integer, example: 2 }
+ *         total: { type: integer, example: 900000 }
+ *         createdAt: { type: string, format: date-time }
+ *     Error:
+ *       type: object
+ *       properties:
+ *         error: { type: string, example: Stok tidak cukup }
+ * /orders:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Buat pesanan baru
+ *     description: Memanggil product-service untuk mengurangi stok, lalu menyimpan pesanan.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/OrderRequest' }
+ *     responses:
+ *       201:
+ *         description: Pesanan dibuat
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Order' }
+ *       400: { description: Input tidak valid, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       404: { description: Produk tidak ditemukan, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       409: { description: Stok tidak cukup, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       503: { description: product-service tidak tersedia, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *   get:
+ *     tags: [Orders]
+ *     summary: Daftar semua pesanan
+ *     responses:
+ *       200:
+ *         description: Berhasil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Order' }
+ */
+// ===== akhir bagian lab 11 =====
+
 const PRODUCT_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost:3000';
 const orders = []; // data milik order-service. TIDAK ada array products di sini.
 
